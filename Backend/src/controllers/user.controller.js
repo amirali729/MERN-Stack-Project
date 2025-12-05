@@ -129,4 +129,40 @@ const loginUser = async (req, res) => {
     }
 }
 
-export { signupUser,loginUser }
+
+const changedPassword = async  (req,res) => {
+    try {
+        const {oldPassword, newPassword , confirmPassword} = req.body
+
+        if ([oldPassword,newPassword,confirmPassword].some((fields) => fields.trim() === "")) {
+            return res.status(403).json({
+                message: "please provide the full detail"
+            })
+            
+        }
+        if (newPassword !== confirmPassword) {
+            return res.status(403).json({
+                message: "new password and confirm password does not matched"
+            })
+        }
+        const user = await User.findById(req.user?._id)
+        const passwordCheck = await user.isPasswordCorrect(oldPassword)
+        if (!passwordCheck) {
+            return res.status(403).json({
+                message: "old password is not correct please enter the correct password"
+            })
+        }
+        user.password = newPassword
+        await user.save({ validateBeforeSave: false})
+
+        return res.status(200).json({
+            message: "password change successfully"
+        })
+    } catch (error) {
+        return res.status(500).json({
+            error: error.message
+        })
+    }
+}
+
+export { signupUser,loginUser,changedPassword }
