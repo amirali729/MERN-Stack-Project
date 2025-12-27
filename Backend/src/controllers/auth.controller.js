@@ -165,4 +165,39 @@ const changedPassword = async  (req,res) => {
     }
 }
 
-export { signupUser,loginUser,changedPassword }
+const userProfile = async (req ,res) => {
+    if (!req.user) {
+        return res.status(401).json({
+            message: "Unauthorized"
+        })
+    }
+    return res.status(201).json({
+        user,
+        message: "User profile fetched successfully"
+    })
+}
+const logoutUser = async (req,res) => {
+    await User.findByIdAndDelete(
+        req.user._id,
+        {
+            $unset: {
+                refreshToken: 1
+            }
+        },
+            {
+                new: true
+            },
+    )
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+    return res
+        .status(200)
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json({message: "you have been logout"})
+}
+
+export { signupUser,loginUser,changedPassword,userProfile,logoutUser }
