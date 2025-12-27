@@ -1,21 +1,10 @@
 
 import { User } from "../models/user.model.js";
+import { generateUserAccessAndRefreshToken } from "./token.controller.js";
 
 
-const generateUserAccessAndRefreshToken = async (userId) => {
-    try {
-        const user = await User.findById(userId)
-        const accessToken = user.generateAccessToken()
-        const refreshToken = user.generateRefreshToken()
 
-        user.refreshToken = refreshToken
 
-        return { accessToken, refreshToken }
-    }
-    catch (error) {
-        console.log("there some error in ",error)
-    }
-}
 const signupUser = async (req, res) => {
     try {
         const { username, password, email } = req.body
