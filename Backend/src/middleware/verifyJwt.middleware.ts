@@ -1,4 +1,6 @@
-export const verifyjwt = async (req, res, next) => {
+import type { Request,Response,NextFunction } from "express";
+import { Jwt } from "jsonwebtoken";
+export const verifyjwt = async (req:Request, res:Response, next:NextFunction) => {
     try {
         let token;
 
@@ -18,7 +20,7 @@ export const verifyjwt = async (req, res, next) => {
         }
 
         // Verify token
-        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        const decoded = Jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
         // Find user
         const user = await User.findById(decoded._id)

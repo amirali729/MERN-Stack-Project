@@ -1,8 +1,20 @@
-import mongoose from "mongoose";
+import mongoose , {Schema,Document} from "mongoose";
 import bcrypt from 'bcrypt'
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 
-const userSchema = new mongoose.Schema({
+
+export interface IUser extends Document {
+    username: string;
+    email: string;
+    password: string;
+    fullName?: string;
+    role: "user" | "admin";
+    isVerified: boolean;
+    emailVerificationToken?: string;
+    emailVerificationExpiry?: Date;
+    refreshToken?: string;
+}
+const userSchema: Schema = new mongoose.Schema({
     username: {
         type: String,
         required: true,
@@ -44,35 +56,37 @@ const userSchema = new mongoose.Schema({
 
 }, { timestamps: true })
 
-userSchema.pre("save", async function () {
-    if (!this.isModified("password")) return
+userSchema.pre<IUser>("save", async function () {
+    if (!this.isModified("password")) return 
     this.password = await bcrypt.hash(this.password, 10)
 
 })
-userSchema.methods.isPasswordCorrect = async function (password) {
+userSchema.methods.isPasswordCorrect = async function (password:string) {
     return bcrypt.compare(password, this.password)
 }
 
 userSchema.methods.generateAccessToken = function () {
-    return jwt.sign({
-        _id: this._id,
-        username: this.username,
-        password: this.password,
-    },
-        process.env.ACCESS_TOKEN_SECRET,
-{
-        expiresIn: process.env.ACCESS_TOKEN_EXPIRY
-})
+    return jwt.sign(
+        {
+            _id: this._id,
+            username: this.username,
+            role: this.role,
+        },
+        process.env.ACCESS_TOKEN_SECRET as string,
+        {
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY as SignOptions["expiresIn"]
+        }
+    )
 }
 
 userSchema.methods.generateRefreshToken = function () {
     return jwt.sign({
         _id: this._id
     },
-        process.env.ACCESS_REFRESH_SECRET,{
-        expiresIn: process.env.ACCESS_REFRESH_EXPIRY
+        process.env.ACCESS_REFRESH_SECRET as jwt.Secret,{
+        expiresIn: process.env.ACCESS_REFRESH_EXPIRY as SignOptions["expiresIn"]
 }
     )
 }
 
-export const User = mongoose.model("User", userSchema)
+export const User = mongoose.model<IUser>("User", userSchema)

@@ -1,7 +1,8 @@
 import jwt from "jsonwebtoken"
 import { User } from "../models/user.model";
+import type  {Request,Response} from 'express';
 
-const logoutAll = async (req, res) => {
+const logoutAll = async (req:Request, res:Response) => {
     const user = await User.findById(req.user._id);
     user.tokenVersion += 1;
     await user.save();
@@ -22,7 +23,7 @@ const generateUserAccessAndRefreshToken = async (userId) => {
     }
 }
 
-const refreshAccessToken = async (req,res) => {
+const refreshAccessToken = async (req:Request, res:Response) => {
     try {
         const incomingtoken = req.cookies.refreshToken || req.body.refreshToken
         if (!incomingtoken) {
@@ -41,7 +42,7 @@ const refreshAccessToken = async (req,res) => {
         })
     }
 
-    if (incomingToken !== user?.refreshToken) {
+    if (incomingtoken !== user?.refreshToken) {
         return res.status(401).json({
             message: "Refresh token is expired or used"
         })

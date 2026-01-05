@@ -1,11 +1,12 @@
 
-import { User } from "../models/user.model.js";
-import { generateUserAccessAndRefreshToken } from "./token.controller.js";
+import { User } from "../models/user.model";  
+import { generateUserAccessAndRefreshToken } from "./token.controller";
+import type  { Request,Response} from 'express';
 
 
 
 
-const signupUser = async (req, res) => {
+const signupUser = async (req:Request, res:Response) => {
     try {
         const { username, password, email } = req.body
 
@@ -64,7 +65,7 @@ const signupUser = async (req, res) => {
     }
 }
 
-const loginUser = async (req, res) => {
+const loginUser = async (req:Request, res:Response) => {
     try {
         const { username, password } = req.body
 
@@ -119,7 +120,7 @@ const loginUser = async (req, res) => {
 }
 
 
-const changedPassword = async  (req,res) => {
+const changedPassword = async  (req:Request,res:Response) => {
     try {
         const {oldPassword, newPassword , confirmPassword} = req.body
 
@@ -154,7 +155,7 @@ const changedPassword = async  (req,res) => {
     }
 }
 
-const userProfile = async (req ,res) => {
+const userProfile = async (req:Request ,res:Response) => {
     if (!req.user) {
         return res.status(401).json({
             message: "Unauthorized"
@@ -166,7 +167,7 @@ const userProfile = async (req ,res) => {
     })
 }
 const logoutUser = async (req,res) => {
-    await User.findByIdAndDelete(
+    await User.findByIdAndUpdate(
         req.user._id,
         {
             $unset: {
