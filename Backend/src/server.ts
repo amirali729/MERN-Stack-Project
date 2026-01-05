@@ -14,5 +14,5 @@ dbConnection()
     })
 })
 .catch((error) => {
-    console.log(`there some error connecting to database`)
+    console.log(`there some error connecting to database`,error)
 })

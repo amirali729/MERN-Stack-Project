@@ -1,5 +1,8 @@
 import type { Request,Response,NextFunction } from "express";
-import { Jwt } from "jsonwebtoken";
+import  jwt  from "jsonwebtoken";
+import { User } from "../models/user.model.js";
+import type { JwtPayloadWithId } from "../types/jwtPayload.js";
+
 export const verifyjwt = async (req:Request, res:Response, next:NextFunction) => {
     try {
         let token;
@@ -20,7 +23,7 @@ export const verifyjwt = async (req:Request, res:Response, next:NextFunction) =>
         }
 
         // Verify token
-        const decoded = Jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET as string) as JwtPayloadWithId;
 
         // Find user
         const user = await User.findById(decoded._id)
@@ -37,8 +40,13 @@ export const verifyjwt = async (req:Request, res:Response, next:NextFunction) =>
         next();
 
     } catch (error) {
+        if (error instanceof Error) {
+            return res.status(500).json({
+            message: error?.message  || "There was an issue verifying the token"
+        });
+        }
         return res.status(500).json({
-            message: error?.message || "There was an issue verifying the token"
+            message: error  || "There was an issue verifying the token"
         });
     }
 };

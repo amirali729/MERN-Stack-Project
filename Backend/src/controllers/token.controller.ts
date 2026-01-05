@@ -1,16 +1,21 @@
 import jwt from "jsonwebtoken"
-import { User } from "../models/user.model";
+import { IUser, User } from "../models/user.model.js";
 import type  {Request,Response} from 'express';
+import type { JwtPayloadWithId } from "../types/jwtPayload.js";
 
 const logoutAll = async (req:Request, res:Response) => {
-    const user = await User.findById(req.user._id);
-    user.tokenVersion += 1;
+    const user = req.user as IUser;
+    if (!user) return res.status(401).json({ message: "Unauthorized" });
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
+    
     await user.save();
     return res.status(200).json({ message: "Logged out from all devices" });
 };
-const generateUserAccessAndRefreshToken = async (userId) => {
+const generateUserAccessAndRefreshToken = async (userId:string) => {
     try {
-        const user = await User.findById(userId)
+        const user = await User.findById(userId) as IUser;
+        if (!user) throw new Error("User not found");
+        
         const accessToken = user.generateAccessToken()
         const refreshToken = user.generateRefreshToken()
 
@@ -32,9 +37,9 @@ const refreshAccessToken = async (req:Request, res:Response) => {
             })
         }
 
-        const decodedToken = jwt.verify(incomingtoken,process.env.ACCESS_REFRESH_SECRET)
+        const decodedToken = jwt.verify(incomingtoken,process.env.ACCESS_REFRESH_SECRET as string) as JwtPayloadWithId
 
-        const user = await User.findById(decodedToken?._id)
+        const user = await User.findById(decodedToken?._id) 
 
         if (!user) {
         return res.status(401).json({
@@ -47,7 +52,12 @@ const refreshAccessToken = async (req:Request, res:Response) => {
             message: "Refresh token is expired or used"
         })
     }
-    const {accessToken,refreshToken} = await generateUserAccessAndRefreshToken(user._id)
+    const tokens = await generateUserAccessAndRefreshToken(user._id.toString());
+        if (!tokens) {
+            return res.status(500).json({ message: "Could not generate tokens" });
+        }
+
+        const { accessToken, refreshToken } = tokens;
     const options = {
         httpOnly: true,
         secure: true

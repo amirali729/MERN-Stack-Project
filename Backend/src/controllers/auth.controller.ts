@@ -1,6 +1,6 @@
 
-import { User } from "../models/user.model";  
-import { generateUserAccessAndRefreshToken } from "./token.controller";
+import { IUser, User } from "../models/user.model.js";  
+import { generateUserAccessAndRefreshToken } from "./token.controller.js";
 import type  { Request,Response} from 'express';
 
 
@@ -59,8 +59,12 @@ const signupUser = async (req:Request, res:Response) => {
             createdUser
         })
     } catch (error) {
-        return res.status(500).json({
+        if(error instanceof Error){return res.status(500).json({
             error: error.message
+        })
+    }
+        return res.status(500).json({
+            error: error
         })
     }
 }
@@ -89,7 +93,12 @@ const loginUser = async (req:Request, res:Response) => {
             })
         }
 
-        const { accessToken, refreshToken } = generateUserAccessAndRefreshToken(user._id)
+        const tokens = await generateUserAccessAndRefreshToken(user._id.toString());
+        if (!tokens) {
+            return res.status(500).json({ message: "Could not generate tokens" });
+        }
+
+        const { accessToken, refreshToken } = tokens;
 
         const loginUser = await User.findById(user._id)
             .select("-password -refreshToken")
@@ -113,9 +122,8 @@ const loginUser = async (req:Request, res:Response) => {
             )
 
     } catch (error) {
-        return res.status(500).json({
-            error: error.message
-        })
+        if (error instanceof Error) return res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: "Unknown error" });
     }
 }
 
@@ -123,7 +131,7 @@ const loginUser = async (req:Request, res:Response) => {
 const changedPassword = async  (req:Request,res:Response) => {
     try {
         const {oldPassword, newPassword , confirmPassword} = req.body
-
+        const user = req.user as IUser;
         if ([oldPassword,newPassword,confirmPassword].some((fields) => fields.trim() === "")) {
             return res.status(403).json({
                 message: "please provide the full detail"
@@ -135,7 +143,7 @@ const changedPassword = async  (req:Request,res:Response) => {
                 message: "new password and confirm password does not matched"
             })
         }
-        const user = await User.findById(req.user?._id)
+        
         const passwordCheck = await user.isPasswordCorrect(oldPassword)
         if (!passwordCheck) {
             return res.status(403).json({
@@ -149,14 +157,14 @@ const changedPassword = async  (req:Request,res:Response) => {
             message: "password change successfully"
         })
     } catch (error) {
-        return res.status(500).json({
-            error: error.message
-        })
+        if (error instanceof Error) return res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: "Unknown error" });
     }
 }
 
 const userProfile = async (req:Request ,res:Response) => {
-    if (!req.user) {
+    const user = req.user as IUser;
+    if (!user) {
         return res.status(401).json({
             message: "Unauthorized"
         })
@@ -166,7 +174,7 @@ const userProfile = async (req:Request ,res:Response) => {
         message: "User profile fetched successfully"
     })
 }
-const logoutUser = async (req,res) => {
+const logoutUser = async (req:Request,res:Response) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {

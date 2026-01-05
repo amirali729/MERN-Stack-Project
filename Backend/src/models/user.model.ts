@@ -13,6 +13,10 @@ export interface IUser extends Document {
     emailVerificationToken?: string;
     emailVerificationExpiry?: Date;
     refreshToken?: string;
+    tokenVersion: number;
+    isPasswordCorrect(password: string): Promise<boolean>;
+    generateAccessToken(): string;
+    generateRefreshToken(): string;
 }
 const userSchema: Schema = new mongoose.Schema({
     username: {
@@ -40,6 +44,10 @@ const userSchema: Schema = new mongoose.Schema({
     },
     refreshToken: {
         type: String
+    },
+    tokenVersion: {
+    type: Number,
+    default: 0
     },
     role: {
         type: String,
