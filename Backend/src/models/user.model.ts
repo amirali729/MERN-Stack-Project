@@ -69,9 +69,11 @@ userSchema.pre<IUser>("save", async function () {
     this.password = await bcrypt.hash(this.password, 10)
 
 })
-userSchema.methods.isPasswordCorrect = async function (password:string) {
-    return bcrypt.compare(password, this.password)
-}
+userSchema.methods.isPasswordCorrect = async function (
+  password: string
+): Promise<boolean> {
+  return await bcrypt.compare(password, this.password);
+};
 
 userSchema.methods.generateAccessToken = function () {
     return jwt.sign(

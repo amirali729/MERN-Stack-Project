@@ -7,11 +7,11 @@ const router = Router()
 
 router.route("/auth/signup").post(signupUser)
 router.route("/auth/login").post(loginUser)
-router.route("auth/logout").post(verifyjwt,logoutUser)
-router.route("auth/me").get(verifyjwt,userProfile)
+router.route("/auth/logout").post(verifyjwt,logoutUser)
+router.route("/auth/me").get(verifyjwt,userProfile)
 router.route("/auth/resetPassword").post(verifyjwt,changedPassword)
-router.route("auth/refresh").post(verifyjwt,refreshAccessToken)
-router.route("auth/logoutAll").post(verifyjwt,logoutAll)
+router.route("/auth/refresh").post(verifyjwt,refreshAccessToken)
+router.route("/auth/logoutAll").post(verifyjwt,logoutAll)
 
 
 export default router

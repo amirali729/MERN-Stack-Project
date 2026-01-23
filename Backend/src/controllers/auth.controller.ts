@@ -16,11 +16,11 @@ const signupUser = async (req:Request, res:Response) => {
             })
         }
 
-        if ([email, username, password].some((fields) => fields?.trim() === "")) {
-            return res.status(401).json({
-                message: "username , password and message can not be empty can not be empty"
-            })
-        }
+        if (!email?.trim() || !username?.trim() || !password) {
+    return res.status(400).json({
+        message: "Email, username, and password are required"
+    })
+}
 
         const existingUser = await User.findOne({
             $or: [
@@ -128,39 +128,57 @@ const loginUser = async (req:Request, res:Response) => {
 }
 
 
-const changedPassword = async  (req:Request,res:Response) => {
-    try {
-        const {oldPassword, newPassword , confirmPassword} = req.body
-        const user = req.user as IUser;
-        if ([oldPassword,newPassword,confirmPassword].some((fields) => fields.trim() === "")) {
-            return res.status(403).json({
-                message: "please provide the full detail"
-            })
-            
-        }
-        if (newPassword !== confirmPassword) {
-            return res.status(403).json({
-                message: "new password and confirm password does not matched"
-            })
-        }
-        
-        const passwordCheck = await user.isPasswordCorrect(oldPassword)
-        if (!passwordCheck) {
-            return res.status(403).json({
-                message: "old password is not correct please enter the correct password"
-            })
-        }
-        user.password = newPassword
-        await user.save({ validateBeforeSave: false})
+const changedPassword = async (req: Request, res: Response) => {
+  try {
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+    const user = req.user as IUser;
 
-        return res.status(200).json({
-            message: "password change successfully"
-        })
-    } catch (error) {
-        if (error instanceof Error) return res.status(500).json({ error: error.message });
-        return res.status(500).json({ error: "Unknown error" });
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
-}
+
+    if (![oldPassword, newPassword, confirmPassword].every(
+      field => typeof field === "string" && field.trim() !== ""
+    )) {
+      return res.status(400).json({
+        message: "Please provide all fields"
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        message: "New password and confirm password do not match"
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        message: "Password must be at least 8 characters long"
+      });
+    }
+
+    const isCorrect = await user.isPasswordCorrect(oldPassword);
+    if (!isCorrect) {
+      return res.status(401).json({
+        message: "Old password is incorrect"
+      });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    return res.status(200).json({
+      message: "Password changed successfully"
+    });
+
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(500).json({ error: error.message });
+    }
+    return res.status(500).json({ error: "Unknown error" });
+  }
+};
+
 
 const userProfile = async (req:Request ,res:Response) => {
     const user = req.user as IUser;

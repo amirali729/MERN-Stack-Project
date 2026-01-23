@@ -27,8 +27,7 @@ export const verifyjwt = async (req:Request, res:Response, next:NextFunction) =>
 
         // Find user
         const user = await User.findById(decoded._id)
-            .select("-password -refreshToken")
-            .lean();
+            .select("+password ")
 
         if (!user) {
             return res.status(401).json({ message: "Invalid access token" });
